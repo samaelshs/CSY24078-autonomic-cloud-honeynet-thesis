@@ -1,0 +1,19 @@
+# Terraform local state and runtime locks
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+crash.log
+
+# Python virtual environment & bytecode
+__pycache__/
+*.py[cod]
+daemon/venv/
+.env
+
+# OS/Editor metadata
+.DS_Store
+.vscode/
+.idea/
