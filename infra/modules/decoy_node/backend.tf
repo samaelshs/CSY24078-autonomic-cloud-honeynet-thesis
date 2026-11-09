@@ -8,7 +8,7 @@ terraform {
   }
   backend "azurerm" {
     resource_group_name  = "rg-terraform-state"
-    storage_account_name = "<STORAGE_NAME_FROM_STEP_2>"
+    storage_account_name = "sttfstate90e12837"
     container_name       = "tfstate"
     key                  = "honeynet.terraform.tfstate"
   }

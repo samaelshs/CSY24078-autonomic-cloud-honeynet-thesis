@@ -11,9 +11,13 @@
 This project bridges cloud infrastructure-as-code, autonomous control loops, and cloud perimeter defense:
 
 - **Autonomic Engine:** Implements the classic **MAPE-K** (Monitor, Analyze, Plan, Execute over Shared Knowledge) control loop to achieve automated threat detection and dynamic perimeter mutation.
+
 - **Infrastructure-as-Code (IaC):** Declarative orchestration of Azure virtual networks, subnets, route tables, and decoy VMs using Terraform.
+
 - **Telemetry & Analytics:** Ingestion of Layer 3/4 NSG flow logs, VM syslog, and honeypot interaction records into an Azure Log Analytics Workspace, processed via Kusto Query Language (KQL).
+
 - **Automated Mitigation:** Headless Python daemons leveraging the Azure SDK (`azure-mgmt-network`) to execute real-time containment actions (NSG quarantine injection, route blackholing) without human intervention.
+
 - **Zero Trust Governance:** Full platform-level identity decoupling using secretless Managed Identities and fine-grained Azure Role-Based Access Control (RBAC).
 
 ## Repository Organization
