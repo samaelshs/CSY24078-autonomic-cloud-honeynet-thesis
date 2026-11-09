@@ -1,9 +1,8 @@
 ---
 
 ### File 2: `CHANGELOG.md`
-Uses the standard [Keep a Changelog](https://keepachangelog.com/) format aligned with Conventional Commits[cite: 2, 9].
+I am going to be using the standard [Keep a Changelog](https://keepachangelog.com/) format aligned with Conventional Commits
 
-```markdown
 # Changelog
 
 All notable changes to this project will be documented in this file.

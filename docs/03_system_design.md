@@ -25,19 +25,23 @@ Telemetry │ ▼
 
 -### Stage Breakdown
 
-| Stage             | Function                                                           | Technical Implementation                                                                                                                                                                                                                                                                                                   |
-| :---------------- | :----------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Monitor (M)**   | Continuous telemetry ingestion across all network traps and hosts. | Telemetry flows into an Azure Log Analytics Workspace via Data Collection Rules (DCRs). Ingestion feeds include Cowrie/Dionaea honeypot auth events, Linux syslogs, and Network Security Group (NSG) Flow Logs. The daemon extracts records programmatically using the Python `LogsQueryClient` with targeted KQL queries. |
-| **Analyze (A)**   | Pattern recognition and anomaly classification.                    | Scans incoming telemetry streams for attacker signatures: brute-force spikes, repetitive port sweeps, or suspicious attempts to reach private RFC 1918 addresses. Telemetry hits are cross-referenced with internal decoy event logs to confirm malicious intent.                                                          |
-| **Plan (P)**      | Dynamic mitigation synthesis.                                      | Translates detected threats into explicit infrastructure actions. The engine inspects current NSG state in the Knowledge Base, locates the next available high-priority slot (typically Priority 100–120), and generates the required REST JSON payload for an immediate `Deny` rule.                                      |
-| **Execute (E)**   | Effector dispatch and boundary enforcement.                        | Transmits the generated rule payload to the Azure Resource Manager (ARM) API via the Python SDK (`NetworkManagementClient.security_rules.begin_create_or_update`). Runs as an asynchronous Long-Running Operation (LRO) to apply perimeter containment immediately.                                                        |
-| **Knowledge (K)** | Central operational state store.                                   | Maintains runtime system context: active honeynet subnets, mapped decoy endpoints, known attacker session states, historical indicators of compromise (IOCs), and local copies of the active Terraform state.                                                                                                              |
+| Stage | Function | Technical Implementation
+
+| **Monitor (M)** | Continuous telemetry ingestion across all network traps and hosts. | Telemetry flows into an Azure Log Analytics Workspace via Data Collection Rules (DCRs). Ingestion feeds include Cowrie/Dionaea honeypot auth events, Linux syslogs, and Network Security Group (NSG) Flow Logs. The daemon extracts records programmatically using the Python `LogsQueryClient` with targeted KQL queries. |
+
+| **Analyze (A)** | Pattern recognition and anomaly classification. | Scans incoming telemetry streams for attacker signatures: brute-force spikes, repetitive port sweeps, or suspicious attempts to reach private RFC 1918 addresses. Telemetry hits are cross-referenced with internal decoy event logs to confirm malicious intent. |
+
+| **Plan (P)** | Dynamic mitigation synthesis. | Translates detected threats into explicit infrastructure actions. The engine inspects current NSG state in the Knowledge Base, locates the next available high-priority slot (typically Priority 100–120), and generates the required REST JSON payload for an immediate `Deny` rule. |
+
+| **Execute (E)** | Effector dispatch and boundary enforcement. | Transmits the generated rule payload to the Azure Resource Manager (ARM) API via the Python SDK (`NetworkManagementClient.security_rules.begin_create_or_update`). Runs as an asynchronous Long-Running Operation (LRO) to apply perimeter containment immediately. |
+
+| **Knowledge (K)** | Central operational state store. | Maintains runtime system context: active honeynet subnets, mapped decoy endpoints, known attacker session states, historical indicators of compromise (IOCs), and local copies of the active Terraform state. |
 
 ---
 
 ## 2. Network Topology & Micro-Segmentation
 
-The deception network is deployed within a dedicated virtual network (`10.0.0.0/16`) engineered to attract and isolate adversarial traffic while preventing lateral movement or outbound weaponization.
+The deception network is deployed within a dedicated virtual network (`10.0.0.0/16`) engineered to attract and isolate adversarial malicious traffic while preventing lateral connections or outbound weaponization.
 
 > **Azure Subnet Addressing Note:** Azure reserves five IP addresses across every subnet: Network (`.0`), Default Gateway (`.1`), DNS mapping (`.2`, `.3`), and Broadcast (`.255`). For standard `/24` subnets, 251 usable host IPs remain (`.4` through `.254`).
 
@@ -65,27 +69,27 @@ Decoy subnets have a custom Route Table associated with them that overrides the 
 
 The design strictly decouples the **Identity Plane** (Microsoft Entra ID), the **Control Plane** (Azure Resource Manager), and the **Data Plane** (VM workloads and honeynet network traffic).
 
-┌─────────────────────────────────────────────────────────────┐
-│ 1. LOCAL VM RUNTIME (Decoy Host / Autonomic Daemon) │
-│ • Python SDK invokes DefaultAzureCredential() │
-│ • Dispatches GET request to link-local IP: │
-│ http://169.254.169.254/metadata/identity/oauth2/token │
+┌──────────────────────────────────────────────────────┐
+│ 1. LOCAL VM RUNTIME (Decoy Host / Autonomic Daemon)
+│ • Python SDK invokes DefaultAzureCredential()
+│ • Dispatches GET request to link-local IP:
+│ http://169.254.169.254/metadata/identity/oauth2/token
 │ Header: Metadata: true │
-└─────────────────────────────┬───────────────────────────────┘
+└─────────────────────────────┬────────────────────────┘
 │ Intercepted locally in memory (vSwitch)
 ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ 2. AZURE HOST HYPERVISOR & ENTRA ID (Identity Plane) │
-│ • Hypervisor validates platform PKI identity │
-│ • Entra ID issues signed Bearer JWT (oid claim) │
-│ • Token delivered back to VM socket │
+│ 2. AZURE HOST HYPERVISOR & ENTRA ID (Identity Plane)
+│ • Hypervisor validates platform PKI identity
+│ • Entra ID issues signed Bearer JWT (oid claim)
+│ • Token delivered back to VM socket
 └─────────────────────────────┬───────────────────────────────┘
 │ Authorization: Bearer
 ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ 3. AZURE RESOURCE MANAGER (Control Plane Gateway) │
-│ • AuthN: Validates JWT signature against Entra JWKS │
-│ • AuthZ: Evaluates Azure RBAC table for oid on scope │
+│ 3. AZURE RESOURCE MANAGER (Control Plane Gateway)
+│ • AuthN: Validates JWT signature against Entra JWKS
+│ • AuthZ: Evaluates Azure RBAC table for oid on scope
 └─────────────────────────────────────────────────────────────┘
 
 ### Core Identity Mechanics
